@@ -5,7 +5,7 @@ const db = require("./db_connection");
 
 const drop_stuff_table_sql = "DROP TABLE IF EXISTS stuff;"
 
-db.query(drop_stuff_table_sql);
+db.execute(drop_stuff_table_sql);
 
 /**** Create "stuff" table (again)  ****/
 
@@ -18,7 +18,7 @@ const create_stuff_table_sql = `
         PRIMARY KEY (id)
     );
 `
-db.query(create_stuff_table_sql);
+db.execute(create_stuff_table_sql);
 
 /**** Create some sample items ****/
 
@@ -29,19 +29,19 @@ const insert_stuff_table_sql = `
         (?, ?, ?);
 `
 
-db.query(insert_stuff_table_sql, ['Widgets', '5', 'Widgets are cool! You can do ... so many... different things... with them...']);
+db.execute(insert_stuff_table_sql, ['Widgets', '5', 'Widgets are cool! You can do ... so many... different things... with them...']);
 
-db.query(insert_stuff_table_sql, ['Gizmos', '100', null]);
+db.execute(insert_stuff_table_sql, ['Gizmos', '100', null]);
 
-db.query(insert_stuff_table_sql, ['Thingamajig', '12345', 'Not to be confused with a Thingamabob']);
+db.execute(insert_stuff_table_sql, ['Thingamajig', '12345', 'Not to be confused with a Thingamabob']);
 
-db.query(insert_stuff_table_sql, ['Thingamabob', '54321', 'Not to be confused with a Thingamajig']);
+db.execute(insert_stuff_table_sql, ['Thingamabob', '54321', 'Not to be confused with a Thingamajig']);
 
 /**** Read the sample items inserted ****/
 
 const read_stuff_table_sql = "SELECT * FROM stuff";
 
-db.query(read_stuff_table_sql, 
+db.execute(read_stuff_table_sql, 
     (error, results) => {
         if (error) 
             throw error;

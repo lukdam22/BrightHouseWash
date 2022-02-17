@@ -26,7 +26,7 @@ const read_stuff_all_sql = `
         stuff
 `
 app.get( "/stuff", ( req, res ) => {
-    db.query(read_stuff_all_sql, (error, results) => {
+    db.execute(read_stuff_all_sql, (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else {
@@ -45,7 +45,7 @@ const read_item_sql = `
         id = ?
 `
 app.get( "/stuff/item/:id", ( req, res ) => {
-    db.query(read_item_sql, [req.params.id], (error, results) => {
+    db.execute(read_item_sql, [req.params.id], (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else if (results.length == 0)

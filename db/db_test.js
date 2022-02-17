@@ -1,6 +1,6 @@
 const db = require("./db_connection");
 
-db.query('SELECT 1 + 1 AS solution', 
+db.execute('SELECT 1 + 1 AS solution', 
     (error, results) => {
         if (error)
             throw error;
@@ -9,4 +9,4 @@ db.query('SELECT 1 + 1 AS solution',
     }
 );
 
-db.end()
+db.end();

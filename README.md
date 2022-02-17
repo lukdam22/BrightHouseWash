@@ -81,7 +81,7 @@ const read_stuff_all_sql = `
         stuff
 `
 app.get( "/stuff", ( req, res ) => {
-    db.query(read_stuff_all_sql, (error, results) => {
+    db.execute(read_stuff_all_sql, (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else
@@ -152,7 +152,7 @@ const read_item_sql = `
         id = ?
 `
 app.get( "/stuff/item", ( req, res ) => {
-    db.query(read_item_sql, [1], (error, results) => {
+    db.execute(read_item_sql, [1], (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else
@@ -168,7 +168,7 @@ If you run your server again and navigate your browser to `localhost:8080/stuff/
 
 Notice the route handler is very similar (for now) to the `/stuff` route from earlier. The only differences are:
 
-1. To assign the placeholder `?` in the SQL a value of `1`, the second parameter of the `db.query()` method is passed an array containing `1`. This technique is known as a "prepared statement", and was demonstrated in `db/db_init.js` in the previous tutorial.
+1. To assign the placeholder `?` in the SQL a value of `1`, the second parameter of the `db.execute()` method is passed an array containing `1`. This technique is known as a "prepared statement", and was demonstrated in `db/db_init.js` in the previous tutorial.
 2. The response only sends the element in the first index of the results, not the entire results object. Results for a `SELECT` statement are always arrays, even if only one row is selected.
 
 
@@ -190,13 +190,13 @@ This makes the route apply to *any* URL path of the pattern `/stuff/item/:id`, w
 
 The `:id` part declares a URL parameter `id`. In the route handler, all URL parameters are sub-properties of the `req.params` property. So `req.params.id` will contain the value of the `:id` part of the URL.
 
-If you see where this is going, the next change is very natural: replace the `1` in the `db.query()`'s second parameter with `req.params.id`. Now, the SQL prepared statement will use the `id` parameter from the URL as the value of `id` in the query!
+If you see where this is going, the next change is very natural: replace the `1` in the `db.execute()`'s second parameter with `req.params.id`. Now, the SQL prepared statement will use the `id` parameter from the URL as the value of `id` in the query!
 
 Together, the updated route and handler look like this:
 
 ```js
 app.get( "/stuff/item/:id", ( req, res, next ) => {
-    db.query(read_item_sql, [req.params.id], (error, results) => {
+    db.execute(read_item_sql, [req.params.id], (error, results) => {
     ...
 ```
 
@@ -303,7 +303,7 @@ The only part that needs to change is the else block, but here's the whole `/stu
 ```js
 // define a route for the item detail page
 app.get( "/stuff/item/:id", ( req, res ) => {
-    db.query(read_item_sql, [req.params.id], (error, results) => {
+    db.execute(read_item_sql, [req.params.id], (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else if (results.length == 0)
@@ -390,7 +390,7 @@ Here's the whole `/stuff/item/:id` route, updated:
 ```js
 // define a route for the stuff inventory page
 app.get( "/stuff", ( req, res ) => {
-    db.query(read_stuff_all_sql, (error, results) => {
+    db.execute(read_stuff_all_sql, (error, results) => {
         if (error)
             res.status(500).send(error); //Internal Server Error
         else {
