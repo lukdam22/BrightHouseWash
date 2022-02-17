@@ -47,28 +47,18 @@
 
                 </thead>
                 <tbody>
-
+                    <% for (let i = 0; i < inventory.length; i++) {%>
                     <tr>
-                        <td>Widgets</td>
-                        <td>5</td>
+                        <td><%= inventory[i].item %></td>
+                        <td><%= inventory[i].quantity %></td>
                         <td>
-                            <a class="btn-small waves-effect waves-light" href="/stuff/item"><i
+                            <a class="btn-small waves-effect waves-light" href=<%= "/stuff/item/" + inventory[i].id %> ><i
                                     class="material-icons right">edit</i>Info/Edit</a>
                             <a class="btn-small waves-effect waves-light red"><i
                                     class="material-icons right">delete</i>Delete</a>
                         </td>
                     </tr>
-
-                    <tr>
-                        <td>Gizmos</td>
-                        <td>99</td>
-                        <td>
-                            <a class="btn-small waves-effect waves-light" href="/stuff/item"><i
-                                    class="material-icons right">edit</i>Info/Edit</a>
-                            <a class="btn-small waves-effect waves-light red"><i
-                                    class="material-icons right">delete</i>Delete</a>
-                        </td>
-                    </tr>
+                    <% } %>
 
                 </tbody>
             </table>

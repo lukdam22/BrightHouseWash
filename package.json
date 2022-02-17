@@ -18,6 +18,7 @@
   "homepage": "https://github.com/atcs-wang/inventory-webapp-02-app-server-basics#readme",
   "dependencies": {
     "dotenv": "^16.0.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.2",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1"

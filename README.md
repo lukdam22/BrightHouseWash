@@ -224,3 +224,237 @@ Update the callback code with a new "else if" clause:
 
 Test the server again by navigating your browser to `localhost:8080/stuff/item/BADID` or any other invalid `:id` value. Confirm that the message is sent. 
 > You can also confirm that both the server logs in the terminal and the browser's developer tools (Inspect -> Network) show the status code is indeed `404 Not Found`.
+
+## (4.3) Responding with rendered HTML: 
+
+We have now seen that Express web servers can either 
+
+**A.** send a *pre-written, static* HTML web page file ([as shown in the previous tutorial]()). We might call that kind of server a "static file server".
+**B.** send *dynamic* JSON data, queried from a database ([as shown in the previous section]()). We might call that kind of server an "API server", since it acts as a thin interface between browsers and the database.
+
+What we really want to do is a third option: send HTML pages that are  *pre-written* with *mostly static* content, but have some parts that are rendered *dynamically* with data queried from the database at the time of the request/response. This technique defines an entire kind of app architecture, and is known as **server side rendering**, or **SSR**.
+
+>It is worth noting that our app architecture could take a different direction called **client side rendering (CSR)**  that prefers using API servers. Generally speaking, CSR apps are **single page applications** - just the home page is provided, which then makes calls to the API server for data to *update the page's content without loading a completely different page*. We will briefly explore this architecture in a future tutorial. 
+
+### (4.3.1) Setting up templating with EJS
+
+To help accomplish this, we will introduce the use of **templating** - specifically, the language / framework [EJS (Embedded JavaScript templating)](https://ejs.co/). 
+
+> There are several other templating languages / frameworks that Express can easily use instead of [EJS](https://ejs.co/):
+>
+> - [Handlebars](https://handlebarsjs.com/) (based on Mustache)
+> - [Pug](https://pugjs.org/api/getting-started.html) (formerly known as Jade)
+>
+> There are pros and cons to each one, but it mostly comes down to style. Feel free to explore.
+
+First, let's install EJS:
+```
+> npm install ejs
+```
+
+> If you're using VS Code, I also recommend installing the extension **EJS language support** by DigitalBrainstem.
+
+To configure the express app to use EJS as its 'templating engine' (aka 'view engine'), add this code to `app.js` right after the "`//set up the server`" section and before the routing section.
+
+```js
+//set up the server
+...
+// Configure Express to use EJS
+const path = require("path");
+app.set( "views", path.join( __dirname, "views" ) );
+app.set( "view engine", "ejs" );
+...
+
+```
+
+> The `path` module, which is also built into Node, provides OS-independent ways to combine directory and file names into valid paths. Ideally, all file paths should be built using the `path` module instead of contacentation.
+
+The second line specified the `views` subdirectory as the location of all EJS **templates** (aka **views** or even **view-templates**). 
+
+Our HTML prototypes are already in the `views` subdirectory, so we start by simply changing their extensions from `.html` to `.ejs`. Any valid HTML is already a valid EJS template.
+
+### (4.3.2) Rendering EJS with data
+
+To render and send any template in `views`, we simply call
+
+```js
+    res.render(view, ?data);
+```
+where `view` is the name of the template file (minus the extension), and `data` is an object with all the data we want to pass to the template for dynamic rendering.
+
+#### (4.3.2.1) Rendering the homepage (index.ejs) (1/3)
+
+The simplest case is our homepage; we use the `index` view (which corresponds to the `index.ejs` file), but no data is passed since the page is static. We can update the `/` route to this:
+
+```js
+// define a route for the default home page
+app.get( "/", ( req, res ) => {
+    res.render('index');
+});
+```
+
+For the other routes that involve querying the database, it gets more interesting.
+
+#### (4.3.2.2)  Rendering the item detail page (item.ejs)
+
+For the `/stuff/item/:id` route, we want to render the `item` view (`item.ejs`), but with the data in `results[0]`. 
+
+The only part that needs to change is the else block, but here's the whole `/stuff/item/:id` route, updated:
+```js
+// define a route for the item detail page
+app.get( "/stuff/item/:id", ( req, res ) => {
+    db.query(read_item_sql, [req.params.id], (error, results) => {
+        if (error)
+            res.status(500).send(error); //Internal Server Error
+        else if (results.length == 0)
+            res.status(404).send(`No item found with id = "${req.params.id}"` ); // NOT FOUND
+        else {
+            let data = results[0]; // results is still an array
+            // data's object structure: 
+            //  { item: ___ , quantity:___ , description: ____ }
+            res.render('item', data);
+        }
+    });
+});
+```
+To define how that data gets used, we now can edit `item.ejs`.
+
+Currently, the `<table>` element has static data in it:
+```html
+<table>
+    <tr>
+        <th>Item:</th>
+        <td>Widgets</td>
+    </tr>
+    <tr>
+        <th>Quantity:</th>
+        <td>5</td>
+    </tr>
+    <tr>
+        <th>Description:</th>
+        <td>
+            Widgets are cool!
+            You can do ... so many...
+            different things... with them...
+        </td>
+    </tr>
+</table>
+```
+
+But as an EJS file, we can change the static data into this:
+
+```html
+<table>
+    <tr>
+        <th>Item:</th>
+        <td><%= item %></td>
+    </tr>
+    <tr>
+        <th>Quantity:</th>
+        <td><%= quantity %></td>
+    </tr>
+    <tr>
+        <th>Description:</th>
+        <td><%= description %></td>
+    </tr>
+</table>
+```
+
+Everything between `<% %>` tags in an EJS file gets interpreted as JavaScript snippets. In particular, using the opening tag `<%=` outputs the value of the JS expression into the template. 
+
+All the properties of the `data` object that was passed to `res.render` are variables you can access in the JavaScript. 
+
+So in `item.ejs`, when you see:
+```html
+        ...
+        <td><%= item %></td>
+        ...
+        <td><%= quantity %></td>
+        ...
+        <td><%= description %></td>
+        ...
+
+```
+the rendering will inject the value of `data.item`,`data.quantity`, and `data.description` into the `<td>` elements. Note that if a value is `null` or `undefined`, the `<%=` outputs nothing.
+
+Restart the server and visit `localhost:8080/stuff/item/1`, `/2`, `/3`, and `/4`. Magic! You should see the item page filled with data for each item.
+
+#### (4.3.2.3) Rendering the stuff inventory page (stuff.ejs)
+
+Finally, for the `/stuff` route, we want to render the `stuff` view (`stuff.ejs`) with all of the data in `results`, which is an array of objects representing items (each of which contains `id`, `item`, and `quantity` properties).
+
+To make the whole `results` array an accessible variable by the EJS, we will set it as a property `inventory` of a new (anonymous) object that we pass as the data parameter to `res.render`.
+
+Here's the whole `/stuff/item/:id` route, updated:
+
+```js
+// define a route for the stuff inventory page
+app.get( "/stuff", ( req, res ) => {
+    db.query(read_stuff_all_sql, (error, results) => {
+        if (error)
+            res.status(500).send(error); //Internal Server Error
+        else {
+            res.render('stuff', { inventory : results });
+        }
+    });
+} );
+```
+
+> We chose to rename `results` as `inventory` for the EJS file. But if the data object was defined as `{ results }`, the variable would still be called `results` in EJS.
+
+Now, to use the data in `stuff.ejs`, we update the `<tbody>` element and replace the static content with the following: 
+
+```ejs
+<tbody>
+    <% for (let i = 0; i < inventory.length; i++) {%>
+    <tr>
+        <td><%= inventory[i].item %></td>
+        <td><%= inventory[i].quantity %></td>
+        <td>
+            <a class="btn-small waves-effect waves-light" href=<%= "/stuff/item/" + inventory[i].id %> ><i
+                    class="material-icons right">edit</i>Info/Edit</a>
+            <a class="btn-small waves-effect waves-light red"><i
+                    class="material-icons right">delete</i>Delete</a>
+        </td>
+    </tr>
+    <% } %>
+</tbody>
+```
+
+The first JS snippet 
+
+```ejs
+<% for (let i = 0; i < inventory.length; i++) {%>
+```
+
+starts a for-loop over `inventory` (the `results`). The loop ends with the final snippets `<% } %>`. All the content inside the loop is repeated for each iteration, making a new table row for each element of `inventory`.
+
+The output tags like `<%= inventory[i].item %>` work as before, injecting the values of the expression (each element of inventory's properties) into the HTML.
+
+The most interesting use of the output tags here is setting a hyperlink for the "Info / Edit" button to the corresponding item detail page:
+
+```ejs
+<a class="..." href=<%= "/stuff/item/" + inventory[i].id %> >
+```
+
+Restart the server and visit `localhost:8080/stuff`. Even more magic! You should see the table filled with multiple rows containing information for each item in the database. 
+
+> Instead of a `for` loop we could instead use a `forEach` loop. The EJS would then look like this:
+> ```js
+>   <% inventory.forEach( elm => {%>
+>       <tr>
+>           <td><%= elm.item %></td>
+>           <td><%= elm.quantity %></td>
+>           ...
+>       </tr>
+>   <% });%>
+
+## (4.4) Conclusion:
+
+We now have a fully connected 3-layer web app! Using SQL queries and EJS, the server  renders the HTML upon request, transforming our static pages into dynamic ones that deliver live content.
+
+> In the tutorials so far, we first prototyped the pages, then designed the database accordingly, wrote queries, and finally modified the prototype into a template based on the queries. There is no requirement, however, that you always follow the same process: the template could come before the data queries are written, or the database could come before the protoypes. You might even skip the protoype step altogether.
+
+The next feature to implement would be functional forms and buttons that create, update, and delete entries in the database. 
+
+However, our Node/Express project structure is starting to grow, and it could stand to be reorganized before adding more features. So in the next tutorial, we'll take a brief "detour" to re-structure and learn a few tips and tricks before moving forward. 
